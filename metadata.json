@@ -1,0 +1,10 @@
+{
+    "uuid": "ai-assistant@jb",
+    "name": "AI Assistant",
+    "description": "A Gnome Shell extension to interact with a AI chatbot via API from the panel.",
+    "version": 1,
+    "shell-version": ["46","47","48"],
+    "url": "https://github.com/Jubayer-Hossain-JB/Gnome-Ai-Assistant",
+    "gettext-domain": "ai-assistant-jb-extension",
+    "settings-schema": "org.gnome.shell.extensions.ai-assistant" 
+}

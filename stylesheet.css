@@ -1,0 +1,248 @@
+/* --- General Popup Styling --- */
+.chat-popup-main-box {
+    padding: 10px;
+    spacing: 8px; /* Spacing between title, scrollview, input-box */
+    width: 500px;
+    height:600px;
+}
+
+.chat-popup-title {
+    font-weight: bold;
+    padding-bottom: 5px;
+}
+
+.chat-popup-scrollview {
+    /* The vfade style class in JS adds nice fades when content overflows */
+    /* background-color: #ffffff; */ /* Optional: if you want a different bg for scroll area */
+}
+
+/* --- Chat History & Messages --- */
+.chat-history-box {
+    padding: 5px; /* Padding inside the scrollable area */
+    spacing: 8px; /* Vertical spacing between message rows */
+}
+
+.message-row {
+    /* This box contains either [icon, bubble] or just [bubble] */
+    /* Alignment is handled by set_x_align in JS */
+    spacing: 5px; /* Spacing between icon and bubble if present */
+    width: -webkit-fill-available; /* Or width: 100%; ensure it takes full width to allow internal alignment */
+}
+
+.message-bubble {
+    padding: 8px 12px;
+    border-radius: 15px; /* Rounded corners */
+    max-width: 75%; /* Bubbles don't take the full width of the chat */
+    /*word-break: break-word;*/ /* CSS for web, St.Label handles wrapping */
+}
+
+.user-message-bubble {
+    background-color: #007bff; /* A common "user" blue, like Messenger */
+    color: white;
+    /* Specific border radii if you want the "tail" effect (more complex) */
+    /* border-bottom-right-radius: 5px; */
+}
+
+.ai-message-bubble {
+    background-color: #222831; /* Light gray for AI/Bot messages */
+    color: #e9e9eb; /* Darker text for readability on light gray */
+    /* border-bottom-left-radius: 5px; */
+}
+
+.error-message-bubble {
+    background-color: #ffebee; /* Light red for errors */
+    color: #c62828; /* Darker red text */
+    font-style: italic;
+    border: 1px solid #ef9a9a;
+}
+
+.ai-avatar-icon {
+    icon-size: 20px; /* Adjust size as needed */
+    /* If using y_align: Clutter.ActorAlign.END on icon, it aligns to bottom of its row cell */
+    /* margin-right: 5px; /* Already handled by message-row spacing */
+    margin-bottom: 10px
+}
+
+
+/* --- Input Area Styling --- */
+.chat-input-box {
+    spacing: 5px;
+    padding-top: 8px; /* More space above input */
+}
+
+.chat-input-entry {
+    padding: 8px 10px;
+    border-radius: 18px; /* Rounded input field */
+    border: 1px solid #cccccc;
+    /* caret-color: #3584e4; */ /* GNOME blue for cursor */
+    /* selection-background-color: #3584e4; */
+}
+.chat-input-entry:focus {
+    border-color: #3584e4; /* Highlight border on focus */
+    /* box-shadow: 0 0 0 2px rgba(53, 132, 228, 0.2); */ /* Subtle glow */
+}
+
+
+.chat-send-button {
+    background-color: #3584e4;
+    color: white;
+    border-radius: 30px; /* Make it a circle */
+    font-size: 30px; /* Adjust for '➤' size */
+    padding: 6px; /* Adjust for circular shape and icon centering */
+    min-width: 36px; /* Ensure circular by matching height */
+    min-height: 36px;
+    border: none;
+}
+
+.chat-send-button:hover {
+    background-color: #2a70c2;
+}
+
+.chat-send-button:active {
+    background-color: #1e58a0;
+}
+
+/* Styles for Code Blocks within AI Messages */
+.code-block-wrapper {
+    max-width:500px;
+    background-color: #2e2e2e; /* Dark background for code */
+    border: 1px solid #444444;
+    border-radius: 6px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 10px; /* Padding will be on header and content */
+    /* x_expand: true; This is set in JS */
+}
+
+.code-block-header {
+    background-color: #3a3a3a; /* Slightly lighter header */
+    padding: 4px 8px;
+    border-top-left-radius: 5px; /* Match wrapper's top radius */
+    border-top-right-radius: 5px;
+    /* x_expand: true; This is set in JS */
+}
+
+.code-language-label {
+    font-size: 0.8em;
+    color: #b0b0b0; /* Light gray for language */
+    /* y_align: center; This is set in JS */
+}
+
+.copy-code-button {
+    font-size: 0.8em;
+    color: #d0d0d0;
+    background-color: #4f4f4f;
+    border: 1px solid #5a5a5a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-height: 0; /* Override default button min-height if too large */
+}
+.copy-code-button:hover {
+    background-color: #5a5a5a;
+    color: #ffffff;
+}
+.copy-code-button:active {
+    background-color: #6a6a6a;
+}
+/* If using an icon for copy button:
+.copy-code-icon {
+    icon-size: 1em;
+}
+.copy-code-button {
+    background-color: transparent;
+    border: none;
+    padding: 2px;
+    border-radius: 4px;
+    color: #b0b0b0;
+}
+.copy-code-button:hover {
+    background-color: rgba(200, 200, 200, 0.1);
+    color: #ffffff;
+}
+*/
+
+.code-block-scrollview {
+    /* max-height: 250px; /* Uncomment to constrain vertical size of code blocks */
+    /* min-height: 50px;  /* Optional: ensure a minimum height */
+    padding: 8px; /* Padding around the code content itself */
+    background-color: #272822; /* Monokai-like or one that fits your theme */
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.code-block-content {
+    font-size: 12px;
+    font-family: monospace;
+    color: #f8f8f2; /* Light text for dark background */
+    /* Set line-wrap to false in JS for horizontal scrolling */
+}
+
+/* Adjust AI message bubble padding if it contains code blocks,
+   as code blocks have their own internal padding. */
+.ai-message-bubble > .code-block-wrapper:first-child {
+    margin-top: 0;
+}
+.ai-message-bubble > .code-block-wrapper:last-child {
+    margin-bottom: 0;
+}
+/* If an AI bubble ONLY contains code blocks, or text and code blocks,
+   the default bubble padding might be too much on top/bottom.
+   This is tricky to get perfect without overly complex CSS or JS.
+   The current approach lets the bubble expand.
+   If you want the bubble to fit snugly only around its content (text and code blocks),
+   you might remove padding from .ai-message-bubble itself and add it to text segments.
+*/
+.ai-message-bubble {
+    padding: 8px 12px; /* Default padding for bubbles that are just text */
+}
+
+/* If an ai-message-bubble contains code blocks or multiple text segments,
+   it's now a BoxLayout. Ensure its children (text labels, code wrappers)
+   don't add excessive outer margins if the bubble already has padding. */
+.ai-message-bubble > StLabel { /* Direct StLabel children (text segments) */
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+.ai-message-bubble > StLabel:first-child {
+    padding-top: 0;
+}
+.ai-message-bubble > StLabel:last-child {
+    padding-bottom: 0;
+}
+
+/* Styles for the Title Area and Clear Button */
+.chat-popup-title-area {
+    /* If you need spacing between title and button, it's handled by the spacer widget or padding on children */
+    /* spacing: 8px; */ /* Use this if you have items directly next to each other in titleAreaBox */
+    padding-bottom: 5px; /* Space below the title area */
+}
+
+
+.clear-chat-button {
+    /* Basic styling for an icon button */
+    background-color: transparent;
+    border: none;
+    border-radius: 4px; /* Slight rounding */
+    padding: 4px; /* Adjust padding around the icon */
+    color: #ffffff; /* Icon color, depends on your theme */
+    /* min_height: 0; */ /* Override theme defaults if button is too large */
+    /* min_width: 0;  */
+}
+
+.clear-chat-button StIcon { /* Target the icon directly if needed */
+    icon-size: 1em; /* Or a fixed pixel size like 16px */
+}
+
+.clear-chat-button:hover {
+    background-color: rgba(0, 0, 0, 0.1); /* Subtle hover effect */
+    color: #222222;
+}
+
+.clear-chat-button:active {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+/* You can also make it inherit from popup-menu-icon if you have generic icon styles */
+.icon-button StIcon {
+    icon-size: 1em;
+}
