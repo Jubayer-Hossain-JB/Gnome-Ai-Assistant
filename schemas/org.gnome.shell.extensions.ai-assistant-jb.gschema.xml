@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="ai-assistant-jb-extension"> <!-- Match gettext-domain in metadata.json -->
+  <schema id="org.gnome.shell.extensions.ai-assistant" path="/org/gnome/shell/extensions/ai-assistant/">
+    <key name="api-key" type="s">
+      <default>''</default>
+      <summary>Google AI Studio API Key</summary>
+      <description>Your personal API key for accessing the Google Generative Language API.</description>
+    </key>
+    <key name="model-name" type="s">
+      <default>'gemini-2.0-flash'</default> <!-- More specific default model -->
+      <summary>Gemini Model Name</summary>
+      <description>The specific Gemini model to use (e.g., 'gemini-1.0-pro', 'gemini-1.5-flash-latest').</description>
+    </key>
+    <key name="temperature" type="d">
+      <default>0.7</default>
+      <range min="0.0" max="1.0"/> <!-- For gemini-1.0-pro. Some models like 1.5-pro go up to 2.0 -->
+      <summary>Temperature (0.0 - 1.0)</summary>
+      <description>Controls randomness. Lower values make the response more deterministic.</description>
+    </key>
+    <key name="max-output-tokens" type="i">
+      <default>2048</default>
+      <range min="1" max="8192"/>
+      <summary>Max Output Tokens</summary>
+      <description>Maximum number of tokens to generate in the response.</description>
+    </key>
+  </schema>
+</schemalist>
