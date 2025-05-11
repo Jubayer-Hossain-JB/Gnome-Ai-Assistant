@@ -3,7 +3,7 @@ import Gtk from 'gi://Gtk';
 import Gio from 'gi://Gio';
 import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-export default class GoogleAIStudioAssistantPreferences extends ExtensionPreferences {
+export default class GnomeAIAssistantPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         // Store the settings object
         this.settings = this.getSettings();
