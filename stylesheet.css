@@ -33,22 +33,26 @@
     padding: 8px 12px;
     border-radius: 15px; /* Rounded corners */
     max-width: 75%; /* Bubbles don't take the full width of the chat */
-    /*word-break: break-word;*/ /* CSS for web, St.Label handles wrapping */
 }
 
 .user-message-bubble {
     background-color: #007bff; /* A common "user" blue, like Messenger */
     color: white;
-    /* Specific border radii if you want the "tail" effect (more complex) */
-    /* border-bottom-right-radius: 5px; */
+    border-bottom-right-radius: 5px;
 }
 
 .ai-message-bubble {
     background-color: #222831; /* Light gray for AI/Bot messages */
     color: #e9e9eb; /* Darker text for readability on light gray */
-    /* border-bottom-left-radius: 5px; */
+    border-bottom-left-radius: 5px;
 }
 
+.system-message-bubble {
+    color: #bbbbbb;
+    padding: 0;
+    text-align: center;
+    font-size: 12px;
+}
 .error-message-bubble {
     background-color: #ffebee; /* Light red for errors */
     color: #c62828; /* Darker red text */
