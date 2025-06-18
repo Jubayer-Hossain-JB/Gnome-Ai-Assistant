@@ -23,5 +23,10 @@
       <summary>Max Output Tokens</summary>
       <description>Maximum number of tokens to generate in the response.</description>
     </key>
+     <key name="memory" type="s">
+      <default>''</default>
+      <summary>User Specific Data</summary>
+      <description>Add your personal data that LLM should keep in mind</description>
+    </key>
   </schema>
 </schemalist>
