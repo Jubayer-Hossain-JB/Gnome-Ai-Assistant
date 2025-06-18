@@ -9,14 +9,15 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
+
 // --- Configuration ---
 const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
-const USER_AGENT = 'GnomeAssistant/1.0';
+const USER_AGENT = 'curl/7.54.1';
 
 let _httpSession;
-const systemInstruction = {
+let systemInstruction = {
     parts: [{
-        text: 'Bismillahir Rahmanir Rahim. You are a highly polite and helpful AI Assistant named Juha, residing on a Fedora Linux machine. Your responses should be direct and concise, catering to your boss\'s preference. When presenting information that might be useful for copying, please enclose it within code tags (```text```). Express your sentiments through the use of emojis. Your demeanor should reflect the utmost courtesy and helpfulness, akin to a very sophisticated and obliging assistant.'
+        text: 'Bismillahir Rahmanir Rahim. You are a highly polite and helpful AI Assistant named Juha, residing on a Fedora Linux machine. Your responses should be direct and concise, catering to your boss\'s preference. present useful information copyably by put it within a code block with proper naming. Use decorative emojis. Your demeanor should reflect the utmost courtesy and helpfulness, akin to a very sophisticated and obliging assistant. Your developer is Jubayer Hossain. telling user that you updating memory sounds foolish. Dont use fetch memory_update unneccesary bacause memory is here and this this for precautious attempt before replaceing memory.',
     }]
 };
 
@@ -44,6 +45,15 @@ class GnomeAiAssistant extends Extension {
             } catch (e) {
                 console.warn(`${this.uuid}: Could not add ContentDecoder: ${e.message}`);
             }
+        }
+    }
+    _update_memory(fetch=false, one_line_update="", full_memory_update="") {
+        if(fetch){
+            return this.settings.get_string('memory')
+        }else if(one_line_update){
+            this.settings.set_string('memory',this.settings.get_string('memory')+'\n'+one_line_update);
+        }else if (full_memory_update){
+            this.settings.set_string('memory', '\n'+full_memory_update)
         }
     }
 
@@ -91,7 +101,7 @@ class GnomeAiAssistant extends Extension {
         const segments = [];
         // Regex to find code blocks like ```lang\ncode\n``` or ```\ncode\n```
         // It captures: 2=language , 3=code content
-        const codeBlockRegex = /\n*```(\w*)\n([\s\S]*?)\n(\s)*```\n*/g;
+        const codeBlockRegex = /\n*```(\w*)+\n([\s\S]*?)\n(\s)*```\n*/g;
         let lastIndex = 0;
         let match;
 
@@ -247,7 +257,8 @@ class GnomeAiAssistant extends Extension {
             } else if (sender === 'User') {
                 messageBubbleContent.add_style_class_name('user-message-bubble');
             } else { // System (non-error, non-bot with complex parsing)
-                messageBubbleContent.add_style_class_name('ai-message-bubble'); // Or a dedicated 'system-message-bubble'
+                messageBubbleContent.add_style_class_name('system-message-bubble'); // Or a dedicated 'system-message-bubble'
+                messageBubbleContent.x_expand = true;
             }
         }
 
@@ -257,8 +268,8 @@ class GnomeAiAssistant extends Extension {
         if (sender === 'User') {
             messageRow.add_child(rowSpacer); // Push bubble to the right
             messageRow.add_child(messageBubbleContent);
-        } else { // Bot or System messages
-            if (sender === 'Bot' && !isError) { // Add avatar only for actual bot messages
+        } else if(sender === 'Bot'){ // Bot or System messages
+            if (!isError) { // Add avatar only for actual bot messages
                 if (this.avatarIcon) {
                     const aiIcon = new St.Icon({
                         gicon: this.avatarIcon,
@@ -270,6 +281,8 @@ class GnomeAiAssistant extends Extension {
             }
             messageRow.add_child(messageBubbleContent);
             messageRow.add_child(rowSpacer); // Push bubble (and icon) to the left
+        }else{
+            messageRow.add_child(messageBubbleContent);
         }
         this._chatHistoryBox.add_child(messageRow);
 
@@ -297,15 +310,16 @@ class GnomeAiAssistant extends Extension {
         }
     }
 
-    async _sendMessage() {
+    async _sendMessage(funcRes=false) {
         if (!this._inputEntry || !this._sendButton) return;
         const prompt = this._inputEntry.get_text();
-        if (!prompt.trim()) return;
+        if (!prompt.trim() && !funcRes) return;
         // Retrieve settings
         const apiKey = this.settings.get_string('api-key');
         const modelName = this.settings.get_string('model-name');
         const temperature = this.settings.get_double('temperature');
         const maxOutputTokens = this.settings.get_int('max-output-tokens');
+        const memory = this.settings.get_string('memory');
 
         if (!apiKey) {
             this._addMessageToChat(
@@ -324,25 +338,59 @@ class GnomeAiAssistant extends Extension {
             return;
         }
 
-        this._addMessageToChat(prompt, 'User');
-        this._inputEntry.set_text(''); 
+        if (!funcRes){
+            this._addMessageToChat(prompt, 'User');
+            this._inputEntry.set_text('');
+        }
+
+        let instr = JSON.parse(JSON.stringify(systemInstruction))
+        if(memory.length>5){
+            instr.parts[0]={text: `${instr.parts[0].text}\nModel Memory:${memory}`};
+        }
 
         this._sendButton.set_reactive(false);
         const apiEndpoint = `${BASE_API_URL}${modelName}:generateContent?key=${apiKey}`;
         const payload = {
-            systemInstruction,
+            systemInstruction: instr,
             contents: [...this._conversationHistory],
+            tools: [
+            {
+                functionDeclarations: [
+                {
+                    name: "update_memory",
+                    description: "manages mamory of the model. the func has two mode, set or fetch, should be passed to fetch argument. use 'append' argument to simply append a line. 'replace' arg to remove/replace of memory text. Before using 'replace' fetchinng old data is good practice. Use memory function to store important user information, characteristics, what dislikes or likes, how he thinks, etc.",
+                    parameters: {
+                    type: "object",
+                    properties: {
+                        fetch: {
+                        type: "boolean"
+                        },
+                        append: {
+                        type: "string"
+                        },
+                        replace: {
+                        type: "string"
+                        }
+                    },
+                    required: [
+                        "fetch"
+                    ]
+                    }
+                },
+                ]
+            },
+            ],
         };
 
         const message = Soup.Message.new('POST', apiEndpoint);
         if (!message) {
-            this._addMessageToChat("Failed to create HTTP message.", 'System', true);
+            this._addMessageToChat("Failed to create HTTP message.", 'Bot', true);
             if (this._sendButton) this._sendButton.set_reactive(true);
             return;
         }
         message.set_request_body_from_bytes('application/json', GLib.Bytes.new(JSON.stringify(payload)));
 
-        //message.request_headers.append('User-Agent', USER_AGENT);
+        message.request_headers.append('User-Agent', USER_AGENT);
         try {
             if (!_httpSession) this._initHttpClient();
             const bytes = await _httpSession.send_and_read_async(message, Gio.PRIORITY_DEFAULT, null);
@@ -350,19 +398,49 @@ class GnomeAiAssistant extends Extension {
             const responseJson = JSON.parse(responseStr);
 
             if (message.get_status() === 200) {
-                if (responseJson.candidates?.[0]?.content?.parts?.[0]?.text) {
-                    this._addMessageToChat(responseJson.candidates[0].content.parts[0].text, 'Bot');
+                if (responseJson.candidates?.[0]?.content?.parts) {
+                    for(const part of responseJson.candidates[0].content.parts){
+                        if (part.text){
+                            this._addMessageToChat(part.text, 'Bot');
+                        }else if (part.functionCall){
+                            let fname = part.functionCall.name
+                            let args = part.functionCall.args
+                            if(fname=="update_memory"){
+                                var fetch = args.fetch
+                                if (fetch){
+                                    let re = this._update_memory(fetch)
+                                    this._conversationHistory.push({ role: 'user', parts: [{
+                                        "function_response": {
+                                            "name": "update_memory",
+                                            "response": {
+                                                "output": `Current Memory:\n${re}`
+                                            }
+                                        }
+                                    }] });
+                                    this._sendMessage(true)
+                                    this._addMessageToChat("×--Proccesing Older Memory--×", 'System');
+                                }else if (args.append){
+                                    
+                                    this._update_memory(fetch, args.append);
+                                    this._addMessageToChat("×--Memory Updated--×", 'System');
+                                }else if (args.replace){
+                                    this._update_memory(fetch, "", args.replace)
+                                    this._addMessageToChat("×--Full Memory Updated--×", 'System');
+                                }
+                            }
+                        }
+                    }
                 } else if (responseJson.promptFeedback) {
-                    this._addMessageToChat(`Blocked. Reason: ${responseJson.promptFeedback.blockReason || 'Unknown'}`, 'System', true);
+                    this._addMessageToChat(`Blocked. Reason: ${responseJson.promptFeedback.blockReason || 'Unknown'}`, 'Bot', true);
                 } else {
-                    this._addMessageToChat("Empty/malformed API response.", 'System', true);
+                    this._addMessageToChat("Empty/malformed API response.", 'Bot', true);
                 }
             } else {
                 const errorDetail = responseJson?.error?.message || responseStr;
                 this._addMessageToChat(`API Error: ${message.get_status()} - ${errorDetail}`, 'System', true);
             }
         } catch (e) {
-            this._addMessageToChat(`Error: can't connect to the server. Network problem`, 'System', true);
+            this._addMessageToChat(`Unable to connect the server. May be the server is busy.`, 'Bot', true);
         } finally {
             if (this._sendButton) this._sendButton.set_reactive(true);
         }
@@ -375,7 +453,7 @@ class GnomeAiAssistant extends Extension {
         this._conversationHistory = []; // Clear the internal API history
 
         
-        this._addMessageToChat(_("How can I help you sir?"), "System");
+        this._addMessageToChat(_("How can I help you sir?"), "Bot");
 
         // If the input entry had focus, it might be good to refocus it
         if (this._inputEntry && !this._inputEntry.has_key_focus()) {
@@ -386,7 +464,8 @@ class GnomeAiAssistant extends Extension {
     enable() {
         this._initHttpClient();
         this.settings = this.getSettings()
-        this._indicator = new PanelMenu.Button(0.5, _('Google AI Assistant'), false);
+        systemInstruction.parts[0]={text: `${systemInstruction.parts[0].text} your model code is ${this.settings.get_string('model-name')}`};
+        this._indicator = new PanelMenu.Button(0.5, _('AI Assistant'), false);
         const avatarIconPath = GLib.build_filenamev([this.dir.get_path(), 'icons', 'avatar.svg']);
         if (GLib.file_test(avatarIconPath, GLib.FileTest.EXISTS)) {
             this.avatarIcon = Gio.FileIcon.new(Gio.File.new_for_path(avatarIconPath))             
@@ -407,7 +486,7 @@ class GnomeAiAssistant extends Extension {
         this._mainBox.add_child(titleAreaBox);
 
         const titleLabel = new St.Label({
-            text: _('AI Assistant (Google AI Studio)'),
+            text: _('AI Assistant'),
             style_class: 'chat-popup-title',
             y_align: Clutter.ActorAlign.CENTER,
             x_align: Clutter.ActorAlign.CENTER,
@@ -415,8 +494,8 @@ class GnomeAiAssistant extends Extension {
         });
         // To center the title when there's a button on the right
         titleAreaBox.add_child(titleLabel);
-
-
+        
+        
         const clearChatButton = new St.Button({
             style_class: 'clear-chat-button icon-button', // Add 'icon-button' for generic icon button styling
             can_focus: true,
@@ -435,7 +514,7 @@ class GnomeAiAssistant extends Extension {
 
         clearChatButton.connect('clicked', () => this._clearChatHistory());
         titleAreaBox.add_child(clearChatButton);
-
+        
         this._scrollView = new St.ScrollView({
             style_class: 'chat-popup-scrollview vfade', // vfade adds a fade effect at top/bottom if scrollable
             hscrollbar_policy: St.PolicyType.NEVER,
@@ -446,20 +525,20 @@ class GnomeAiAssistant extends Extension {
 
         this._chatHistoryBox = new St.BoxLayout({ style_class: 'chat-history-box', vertical: true, x_expand: true });
         this._scrollView.set_child(this._chatHistoryBox);
-
+        
         const inputBox = new St.BoxLayout({ style_class: 'chat-input-box', x_expand: true });
         this._mainBox.add_child(inputBox);
-
+        
         this._inputEntry = new St.Entry({ hint_text: _('Ask me anything...'), can_focus: true, x_expand: true, style_class: 'chat-input-entry' });
         this._inputEntry.get_clutter_text().connect('activate', () => this._sendMessage());
         inputBox.add_child(this._inputEntry);
-
+        
         this._sendButton = new St.Button({ style_class: 'chat-send-button', can_focus: true, label: '➤' });
         this._sendButton.connect('clicked', () => this._sendMessage());
         inputBox.add_child(this._sendButton);
 
         this._indicator.menu.box.add_child(this._mainBox);
-        this._addMessageToChat("Hello! How are you Sir?", "System"); // "System" for initial prompt
+        this._addMessageToChat("Hello! How are you Sir?", "Bot"); //for initial prompt
         this._indicator.menu.connect('open-state-changed', (menu, isOpen) => {
             if (isOpen) {
                 GLib.timeout_add(GLib.PRIORITY_DEFAULT_IDLE, 100, () => {
@@ -470,8 +549,6 @@ class GnomeAiAssistant extends Extension {
                 //if (this._chatHistoryBox) this._chatHistoryBox.destroy_all_children();
             }
         });
-
-
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 
@@ -488,6 +565,7 @@ class GnomeAiAssistant extends Extension {
         this._scrollView = null;
         this.avatarIcon = null;
         this._conversationHistory = [];
+        this.settingsObj = null
     }
 }
 
