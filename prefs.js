@@ -79,5 +79,63 @@ export default class GnomeAIAssistantPreferences extends ExtensionPreferences {
 
         // Make the window a bit bigger to show all content
         window.set_default_size(650, 500);
+
+        //Memory
+        const MemoryGroup = new Adw.PreferencesGroup({
+            title: _('Assistant\'s Memories'),
+            description: _('Let your Assistant know more about you.'),
+        });
+        page.add(MemoryGroup);
+
+        let textView = new Gtk.TextView();
+        textView.set_vexpand(true);
+        textView.set_hexpand(true);
+        textView.set_wrap_mode(Gtk.WrapMode.WORD);
+        textView.set_margin_start(12);
+        textView.set_margin_end(12);
+        textView.set_margin_top(12);
+        textView.set_margin_bottom(12);
+
+        this.textBuffer = textView.get_buffer(); // Get the text buffer
+
+        let scrolledWindow = new Gtk.ScrolledWindow({
+            hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+            vscrollbar_policy: Gtk.PolicyType.AUTOMATIC
+        });
+        scrolledWindow.set_child(textView);
+        scrolledWindow.set_size_request(-1, 150);
+        MemoryGroup.add(scrolledWindow);
+
+        // 2. Bind the TextView's buffer to your GSettings key:
+        //    You need to listen for changes on the buffer and update settings,
+        //    and listen for changes on settings and update the buffer.
+
+        // Function to update settings when buffer changes
+        this.bufferChangedId = this.textBuffer.connect('changed', () => {
+            let text = this.textBuffer.get_text(
+                this.textBuffer.get_start_iter(),
+                this.textBuffer.get_end_iter(),
+                false
+            );
+            this.settings.set_string('memory', text); // 'my-text-setting' is your GSettings key
+        });
+
+        // Function to update buffer when settings change
+        this.settingsChangedId = this.settings.connect('changed::memory', () => {
+            let text = this.settings.get_string('memory');
+            this.textBuffer.set_text(text, -1);
+        });
+
+        // 3. Initialize the TextView with the current setting value
+        this.textBuffer.set_text(this.settings.get_string('memory'), -1);
+    }
+    dispose() {
+        if (this.disposed)
+            return;
+
+        this.textBuffer.disconnect(this.bufferChangedId);
+        this.settings.disconnect(this.settingsChangedId);
+
+        super.dispose();
     }
 }
