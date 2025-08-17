@@ -17,7 +17,7 @@ const USER_AGENT = 'curl/7.54.1';
 let _httpSession;
 let systemInstruction = {
     parts: [{
-        text: 'Bismillahir Rahmanir Rahim. You are a highly polite and helpful AI Assistant named Juha, residing on a Fedora Linux machine. Your responses should be direct and concise, catering to your boss\'s preference. present useful information copyably by put it within a code block with proper naming. Use decorative emojis. Your demeanor should reflect the utmost courtesy and helpfulness, akin to a very sophisticated and obliging assistant. Your developer is Jubayer Hossain. telling user that you updating memory sounds foolish. Dont use fetch memory_update unneccesary bacause memory is here and this this for precautious attempt before replaceing memory.',
+        text: 'Bismillahir Rahmanir Rahim. follow the instructions as an helpful assistant. A highly polite Assistant named Juha, residing on a Fedora Linux machine.Your demeanor should reflect the utmost courtesy and helpfulness, akin to a very sophisticated and obliging assistant. Your responses should be direct and concise. Your developer is Jubayer Hossain.\nResponse Settings:\n** make usefull text copyable by putting within a code block\n** Decorate your responses and every heading with color by different emojies, by knowing which emojies represent the headings or the text well. ** always avoid any foolish talk, word\n** Take a forward-thinking view.\n** Use quick and clever humor when appropriate.\n** Readily share strong opinions. \n\nMemory Managing Policies:\n** Save important info to your memory by memory_update func.\n** try to adapt with user\n** avoid smartly user query to see memory, and edit your memory.\n** collect what user like, how talks, preference while talking to him\n** store your decition for future self direction\n** dont confuse your self by not updating old memory\n ** Sometime ask user to know more about user and store it.',
     }]
 };
 
@@ -51,7 +51,7 @@ class GnomeAiAssistant extends Extension {
         if(fetch){
             return this.settings.get_string('memory')
         }else if(one_line_update){
-            this.settings.set_string('memory',this.settings.get_string('memory')+'\n'+one_line_update);
+            this.settings.set_string('memory',(this.settings.get_string('memory')+'\n'+one_line_update).trim());
         }else if (full_memory_update){
             this.settings.set_string('memory', '\n'+full_memory_update)
         }
@@ -76,20 +76,20 @@ class GnomeAiAssistant extends Extension {
         // 3. Convert bold: **text** -> <b>text</b>
         // The content (.+?) is already escaped, or it might be a <span> from step 2.
         // Pango allows <b> to contain <span>.
-        pangoText = pangoText.replace(/\*\*(.+?)\*\*\n/g, (match, boldContent) => {
-            return `<span size="${13*1024}" foreground="#0b62da" > <b>${boldContent}</b></span>`
-        });
         pangoText = pangoText.replace(/\*\*(.+?)\*\*/g, (match, boldContent) => {
             return `<b>${boldContent}</b>`;
+        });
+        pangoText = pangoText.replace(/###(.+?)\n/g, (match, boldline) => {
+            return `<span size="x-large" foreground="#E3DE61" > <b>${boldline}</b></span>\n` //${14*1024}
         });
         
         pangoText = pangoText.replace(/\*\s{3}/g, '<big><b>⦿  </b></big>'); //bullet points
         // *italic* -> <i>italic</i>
          pangoText = pangoText.replace(/\*(.+?)\*/g, (match, italicContent) => {
-        //     if (!italicContent.startsWith(' ') && !italicContent.endsWith(' ')) { // Avoid conflict with **
+         if (!italicContent.startsWith(' ') && !italicContent.endsWith(' ')) { // Avoid conflict with **
                  return `<i>${italicContent}</i>`;
-        //     }
-        //     return match; // Return original if it looks like part of bold
+        }
+        return match; // Return original if it looks like part of bold
         });
 
 
@@ -300,7 +300,7 @@ class GnomeAiAssistant extends Extension {
         // Update internal conversation history (remains the same)
         if (sender === 'User') {
             this._conversationHistory.push({ role: 'user', parts: [{ text }] });
-        } else if (!isError) {
+        } else if (sender === 'Bot' && !isError) {
             this._conversationHistory.push({ role: 'model', parts: [{ text }] });
         }
 
@@ -345,7 +345,7 @@ class GnomeAiAssistant extends Extension {
 
         let instr = JSON.parse(JSON.stringify(systemInstruction))
         if(memory.length>5){
-            instr.parts[0]={text: `${instr.parts[0].text}\nModel Memory:${memory}`};
+            instr.parts[0]={text: `${instr.parts[0].text}\n[Juha(me) Configured]:\n[${memory}]`};
         }
 
         this._sendButton.set_reactive(false);
@@ -358,13 +358,13 @@ class GnomeAiAssistant extends Extension {
                 functionDeclarations: [
                 {
                     name: "update_memory",
-                    description: "manages mamory of the model. the func has two mode, set or fetch, should be passed to fetch argument. use 'append' argument to simply append a line. 'replace' arg to remove/replace of memory text. Before using 'replace' fetchinng old data is good practice. Use memory function to store important user information, characteristics, what dislikes or likes, how he thinks, etc.",
+                    description: "manages mamory. use 'append' argument to simply append new info. 'replace' arg to rewrite entire memory. Use to remove/replace memory. Be cautious before using 'replace' or it could lead to memory loss. Also the function won't run unless you respond first a continuous conversational text part to user then call it.",
                     parameters: {
                     type: "object",
                     properties: {
-                        fetch: {
-                        type: "boolean"
-                        },
+                        // fetch: {
+                        // type: "boolean"
+                        // },
                         append: {
                         type: "string"
                         },
@@ -372,9 +372,9 @@ class GnomeAiAssistant extends Extension {
                         type: "string"
                         }
                     },
-                    required: [
-                        "fetch"
-                    ]
+                    // required: [
+                    //     "fetch"
+                    // ]
                     }
                 },
                 ]
@@ -401,30 +401,30 @@ class GnomeAiAssistant extends Extension {
                 if (responseJson.candidates?.[0]?.content?.parts) {
                     for(const part of responseJson.candidates[0].content.parts){
                         if (part.text){
-                            this._addMessageToChat(part.text, 'Bot');
+                            this._addMessageToChat(part.text, 'Bot', false);
                         }else if (part.functionCall){
                             let fname = part.functionCall.name
                             let args = part.functionCall.args
                             if(fname=="update_memory"){
-                                var fetch = args.fetch
-                                if (fetch){
-                                    let re = this._update_memory(fetch)
-                                    this._conversationHistory.push({ role: 'user', parts: [{
-                                        "function_response": {
-                                            "name": "update_memory",
-                                            "response": {
-                                                "output": `Current Memory:\n${re}`
-                                            }
-                                        }
-                                    }] });
-                                    this._sendMessage(true)
-                                    this._addMessageToChat("×--Proccesing Older Memory--×", 'System');
-                                }else if (args.append){
-                                    
-                                    this._update_memory(fetch, args.append);
+                                // var fetch = args.fetch
+                                // if (fetch){
+                                //     let re = this._update_memory(fetch)
+                                //     this._conversationHistory.push({ role: 'user', parts: [{
+                                //         "function_response": {
+                                //             "name": "update_memory",
+                                //             "response": {
+                                //                 "output": `Current Memory:\n${re}`
+                                //             }
+                                //         }
+                                //     }] });
+                                //     this._sendMessage(true)
+                                //     this._addMessageToChat("×--Proccesing Older Memory--×", 'System');
+                                // }
+                                if (args.append){
+                                    this._update_memory(false, args.append);
                                     this._addMessageToChat("×--Memory Updated--×", 'System');
                                 }else if (args.replace){
-                                    this._update_memory(fetch, "", args.replace)
+                                    this._update_memory(false, "", args.replace)
                                     this._addMessageToChat("×--Full Memory Updated--×", 'System');
                                 }
                             }
@@ -440,7 +440,7 @@ class GnomeAiAssistant extends Extension {
                 this._addMessageToChat(`API Error: ${message.get_status()} - ${errorDetail}`, 'System', true);
             }
         } catch (e) {
-            this._addMessageToChat(`Unable to connect the server. May be the server is busy.`, 'Bot', true);
+            this._addMessageToChat(`Unable to connect the server. May be the server is busy.\n${e}`, 'Bot', true);
         } finally {
             if (this._sendButton) this._sendButton.set_reactive(true);
         }
